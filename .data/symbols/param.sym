@@ -169,6 +169,10 @@
 1802	slayer_task_boss_location
 1935	spell_maxhit
 
+65382	mining_fast_roll_chance
+65383	mining_roll_ticks
+65384	mining_rate_high
+65385	mining_rate_low
 65386	graceful_restore_rate
 65387	prayer_drain_effect
 65388	charged_variant

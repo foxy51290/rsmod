@@ -126,4 +126,6 @@ object Constants {
 
     fun isOverhead(icon: Int?): Boolean =
         icon in overhead_protect_from_melee..overhead_deflect_magic
+
+    const val overlay_timer_mining: Int = 1
 }
