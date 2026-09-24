@@ -20,6 +20,30 @@ public fun Player.runClientScript(id: Int, args: List<Any>) {
 }
 
 public object ClientScripts {
+    /**
+     * Cache onLoad for magic_spellbook (iface 218) runs CS2 2262 to unhide spells. Call this after
+     * login varps are authoritative when the overlay may have loaded earlier (before VarpReset).
+     *
+     * Args match the packed component list on `magic_spellbook:universe` in rev 239.
+     */
+    public fun magicSpellbookInitialiseSpells(player: Player, magicSpellbookId: Int) {
+        val base = magicSpellbookId shl 16
+        player.runClientScript(
+            MAGIC_SPELLBOOK_INITIALISE,
+            base or 0, // universe
+            base or 1, // top
+            base or 3, // spelllayer
+            base or 201, // infolayer
+            base or 2, // glow
+            base or 203, // filtermenu_container
+            base or 206, // filtermenu
+            base or 207, // bottom
+            base or 208, // infobutton
+            base or 209, // filterbutton
+            base or 210, // tooltip
+        )
+    }
+
     public fun settingsInterfaceScaling(player: Player, scale: Int) {
         player.runClientScript(2358, scale)
     }
@@ -55,6 +79,41 @@ public object ClientScripts {
     /** @param joinedChoices Dialogue choices must be split by the `|` character. */
     public fun chatboxMultiInit(player: Player, title: String, joinedChoices: String): Unit =
         player.runClientScript(58, title, joinedChoices)
+
+    /**
+     * `[clientscript,skillmulti_setup]` - populates interface 270.
+     *
+     * The script's 21 int arguments are, in order: the verb key, the "All" quantity, eighteen
+     * option objs, and the initially-selected quantity. It stops reading options at the first `-1`,
+     * so [objs] must be padded to eighteen entries with `-1`.
+     *
+     * @param verb a key into enum 1809, which supplies the op text drawn on every option slot.
+     * @param maxCount the amount the `All` button offers. Clamped by the client to `1..28`.
+     * @param selectedCount seeds both the highlighted quantity button and the `Other` button's
+     *   remembered value.
+     * @param joinedTitleAndLabels the dialog title followed by one label per option, split by the
+     *   `|` character. cs 632 peels off one token per slot and hands the final slot whatever is
+     *   left, so a label containing `|` would silently shift every later row.
+     */
+    public fun skillMultiSetup(
+        player: Player,
+        verb: Int,
+        maxCount: Int,
+        selectedCount: Int,
+        objs: List<Int>,
+        joinedTitleAndLabels: String,
+    ) {
+        require(objs.size == SKILL_MULTI_SLOTS) {
+            "`objs` must hold exactly $SKILL_MULTI_SLOTS entries. (size=${objs.size})"
+        }
+        val args = ArrayList<Any>(SKILL_MULTI_SLOTS + 4)
+        args += verb
+        args += maxCount
+        args.addAll(objs)
+        args += selectedCount
+        args += joinedTitleAndLabels
+        player.runClientScript(SKILL_MULTI_SETUP, args)
+    }
 
     /**
      * Values for [layerMode] can be found in [org.rsmod.api.config.Constants] prefixed with
@@ -249,4 +308,91 @@ public object ClientScripts {
         cancel: String,
         confirm: String,
     ): Unit = player.runClientScript(4212, "$title|$text|$cancel|$confirm", target.packed)
+
+    /**
+     * Flashes a toplevel side-panel icon. Values match [org.rsmod.api.config.Constants]
+     * `toplevel_*`.
+     *
+     * BROKEN: `[proc,toplevel_flashicon]` takes **3** ints per its rev-239 cache trailer, and what
+     * they hold has not been recovered - the cache has no component hook that calls it. Tutorial
+     * Island drives the flash through the `flashside` varbit instead. Do not use until the
+     * signature is known.
+     */
+    public fun toplevelFlashIcon(player: Player, side: Int): Unit =
+        player.runClientScript(913, side)
+
+    public fun highlightNpcOn(player: Player, npcIndex: Int): Unit =
+        player.runClientScript(4744, npcIndex)
+
+    public fun highlightNpcOff(player: Player, npcIndex: Int): Unit =
+        player.runClientScript(4745, npcIndex)
+
+    public fun highlightNpcTypeOn(player: Player, npcTypeId: Int): Unit =
+        player.runClientScript(4746, npcTypeId)
+
+    public fun highlightNpcTypeOff(player: Player, npcTypeId: Int): Unit =
+        player.runClientScript(4747, npcTypeId)
+
+    public fun highlightLocOn(player: Player, locIndex: Int): Unit =
+        player.runClientScript(4748, locIndex)
+
+    public fun highlightLocOff(player: Player, locIndex: Int): Unit =
+        player.runClientScript(4749, locIndex)
+
+    public fun highlightLocTypeOn(player: Player, locTypeId: Int): Unit =
+        player.runClientScript(4750, locTypeId)
+
+    public fun highlightLocTypeOff(player: Player, locTypeId: Int): Unit =
+        player.runClientScript(4751, locTypeId)
+
+    public fun entityHighlightClear(player: Player): Unit = player.runClientScript(5950)
+
+    public fun magicFlashSpell(player: Player, spellComponent: ComponentType): Unit =
+        player.runClientScript(2081, spellComponent.packed)
+
+    public fun magicFlash(player: Player): Unit = player.runClientScript(2232)
+
+    public fun equipmentIconFlash(player: Player): Unit = player.runClientScript(2643)
+
+    /**
+     * Classic Tutorial Island clientscript helpers (rev 239 live). Prefer these over the unused
+     * `tut2_*` cache scripts (3376+).
+     */
+    /** [clientscript,mesoverlay] — HTML guide text for `tutorial_overlay` / chat mes layer. */
+    public fun mesOverlay(player: Player, text: String): Unit = player.runClientScript(1974, text)
+
+    /** [clientscript,tutorial_overlay_hint] */
+    public fun tutorialOverlayHint(player: Player, vararg args: Any): Unit =
+        player.runClientScript(2584, *args)
+
+    /**
+     * [clientscript,tutorial_progressbar_init] — takes 6 ints. Normally unnecessary: `614:0` has a
+     * baked onLoad hook that runs it with `[trigger, 614:2, 614:3, 614:4, 614:12, 614:15]` when
+     * `tutorial_overlay` opens.
+     */
+    public fun tutorialProgressbarInit(player: Player, vararg args: Any): Unit =
+        player.runClientScript(749, *args)
+
+    /**
+     * [clientscript,tutorial_progressbar_set] — takes **1** int per its cache trailer. Whether that
+     * int is the raw step or a percentage is unconfirmed, so [max] is only used to derive it.
+     */
+    public fun tutorialProgressbarSet(player: Player, progress: Int, max: Int = 52): Unit =
+        player.runClientScript(867, if (max <= 0) 0 else (progress * 100) / max)
+
+    /** [clientscript,tutorial_default_settings] */
+    public fun tutorialDefaultSettings(player: Player, vararg args: Any): Unit =
+        player.runClientScript(2644, *args)
+
+    /** [clientscript,tutorial_end] */
+    public fun tutorialEnd(player: Player): Unit = player.runClientScript(2645)
+
+    /** Cache onLoad script on `magic_spellbook:universe` (rev 239). */
+    private const val MAGIC_SPELLBOOK_INITIALISE = 2262
+
+    /** `[clientscript,skillmulti_setup]` - 21 int args, 1 string arg. */
+    private const val SKILL_MULTI_SETUP = 2046
+
+    /** cs 2046 always writes eighteen option slots, `270:15`..`270:32`. */
+    private const val SKILL_MULTI_SLOTS = 18
 }

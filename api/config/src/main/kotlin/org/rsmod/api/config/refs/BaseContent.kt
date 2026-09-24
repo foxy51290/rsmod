@@ -34,6 +34,8 @@ object BaseContent : ContentReferences() {
     val duck = find("duck")
     val duckling = find("duckling")
     val woodcutting_axe = find("woodcutting_axe")
+    val mining_pickaxe = find("mining_pickaxe")
+    val mining_rock = find("mining_rock")
     val closed_left_picketgate = find("closed_left_picketgate")
     val closed_right_picketgate = find("closed_right_picketgate")
     val opened_left_picketgate = find("opened_left_picketgate")

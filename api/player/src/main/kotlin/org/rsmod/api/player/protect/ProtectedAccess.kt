@@ -9,6 +9,7 @@ import org.rsmod.api.config.constants
 import org.rsmod.api.config.refs.BaseHitmarkGroups
 import org.rsmod.api.config.refs.components
 import org.rsmod.api.config.refs.hitmark_groups
+import org.rsmod.api.config.refs.interfaces
 import org.rsmod.api.config.refs.invs
 import org.rsmod.api.config.refs.objs
 import org.rsmod.api.config.refs.queues
@@ -84,6 +85,10 @@ import org.rsmod.api.player.stat.statRestore
 import org.rsmod.api.player.stat.statRestoreAll
 import org.rsmod.api.player.stat.statSub
 import org.rsmod.api.player.stopInvTransmit
+import org.rsmod.api.player.ui.SkillMulti
+import org.rsmod.api.player.ui.SkillMultiOption
+import org.rsmod.api.player.ui.SkillMultiSelection
+import org.rsmod.api.player.ui.SkillMultiVerb
 import org.rsmod.api.player.ui.ifChatNpcSpecific
 import org.rsmod.api.player.ui.ifChatPlayer
 import org.rsmod.api.player.ui.ifChoice
@@ -110,6 +115,7 @@ import org.rsmod.api.player.ui.ifSetNpcHead
 import org.rsmod.api.player.ui.ifSetObj
 import org.rsmod.api.player.ui.ifSetPlayerHead
 import org.rsmod.api.player.ui.ifSetText
+import org.rsmod.api.player.ui.ifSkillMulti
 import org.rsmod.api.player.vars.VarPlayerIntMapDelegate
 import org.rsmod.api.player.vars.resyncVar
 import org.rsmod.api.player.vars.setActiveMoveSpeed
@@ -2356,6 +2362,71 @@ public class ProtectedAccess(
         }
         val page = pages.first()
         player.ifDoubleobjbox(page.text, obj1.id, zoom1, obj2.id, zoom2, "", context.eventBus)
+    }
+
+    /**
+     * Opens the generic skilling make-menu (interface **270 `skillmulti`**), suspending until the
+     * player picks one of [options] or the dialog goes away.
+     *
+     * Returns `null` when the suspension was resumed by something that was not one of this dialog's
+     * option slots - the player closing the interface, or another pause button arriving first. It
+     * does *not* throw in that case, because a player walking away from a make-menu is ordinary,
+     * not a lost-access error.
+     *
+     * The dialog is closed before this returns, so callers can go straight into the make loop.
+     *
+     * @param maxCount what the `All` button offers. Clamped to `1..`[SkillMulti.MAX_COUNT]; the
+     *   client cannot represent more than 28 in the subcomponent field it answers with.
+     * @param selectedCount the quantity button highlighted on open.
+     * @throws IllegalArgumentException if [options] is empty or holds more than
+     *   [SkillMulti.MAX_OPTIONS] entries.
+     * @throws ProtectedAccessLostException if the player could not retain protected access after
+     *   the coroutine suspension.
+     */
+    public suspend fun skillMultiDialog(
+        title: String,
+        options: List<SkillMultiOption>,
+        verb: SkillMultiVerb = SkillMultiVerb.Make,
+        maxCount: Int = SkillMulti.MAX_COUNT,
+        selectedCount: Int = 1,
+    ): SkillMultiSelection? {
+        require(options.isNotEmpty()) { "`options` must not be empty." }
+        require(options.size <= SkillMulti.MAX_OPTIONS) {
+            "Can only have up to ${SkillMulti.MAX_OPTIONS} `options`. (size=${options.size})"
+        }
+
+        val componentTypes = context.componentTypes
+        val interfaceId = interfaces.skillmulti.id
+        val optionComponents =
+            List(options.size) {
+                val packed = Component(interfaceId, SkillMulti.FIRST_OPTION_COMPONENT + it).packed
+                componentTypes[packed]
+                    ?: error("Skillmulti option slot is missing from the cache: $interfaceId:$it")
+            }
+
+        player.ifSkillMulti(
+            verb = verb,
+            title = title,
+            options = options,
+            optionComponents = optionComponents,
+            maxCount = maxCount.coerceIn(1, SkillMulti.MAX_COUNT),
+            selectedCount = selectedCount.coerceIn(1, SkillMulti.MAX_COUNT),
+            eventBus = context.eventBus,
+        )
+
+        val modal = player.ui.getModalOrNull(components.chatbox_chatarea)
+        val input = coroutine.pause(ResumePauseButtonInput::class)
+        resumeWithModalProtectedAccess(null, modal, components.chatbox_chatarea)
+        ifClose()
+
+        val index = optionComponents.indexOfFirst { it.isType(input.component) }
+        if (index == -1) {
+            return null
+        }
+        // Verbs that suppress the quantity row report `0`; every other path is clamped to 1..28 by
+        // `skillmulti_itembutton_triggered` before it is sent.
+        val count = input.subcomponent.coerceIn(1, SkillMulti.MAX_COUNT)
+        return SkillMultiSelection(index, options[index], count)
     }
 
     /**

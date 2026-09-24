@@ -63,6 +63,7 @@ object BaseSpotanims : SpotanimReferences() {
     val darkbow_smoke_arrow_impact = find("darkbow_smoke_arrow_impact", 98611324)
 
     val stunned = find("stunned", 11466616)
+    val teleport_casting = find("teleport_casting", 11542409)
     val failedspell_impact = find("failedspell_impact", 11500598)
 
     val windstrike_casting = find("windstrike_casting", 11512071)

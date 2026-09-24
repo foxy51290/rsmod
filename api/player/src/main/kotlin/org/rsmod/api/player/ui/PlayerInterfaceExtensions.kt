@@ -30,6 +30,7 @@ import org.rsmod.api.player.output.ClientScripts.confirmOverlayInit
 import org.rsmod.api.player.output.ClientScripts.ifSetTextAlign
 import org.rsmod.api.player.output.ClientScripts.menu
 import org.rsmod.api.player.output.ClientScripts.objboxSetButtons
+import org.rsmod.api.player.output.ClientScripts.skillMultiSetup
 import org.rsmod.api.player.output.ClientScripts.topLevelChatboxResetBackground
 import org.rsmod.api.player.output.ClientScripts.topLevelMainModalBackground
 import org.rsmod.api.player.output.ClientScripts.topLevelMainModalOpen
@@ -536,6 +537,24 @@ internal fun Player.ifMenu(
 }
 
 /** @see [chatboxMultiInit] */
+internal fun Player.ifSkillMulti(
+    verb: SkillMultiVerb,
+    title: String,
+    options: List<SkillMultiOption>,
+    optionComponents: List<ComponentType>,
+    maxCount: Int,
+    selectedCount: Int,
+    eventBus: EventBus,
+) {
+    openModal(interfaces.skillmulti, components.chatbox_chatarea, eventBus)
+    val objs = List(SkillMulti.MAX_OPTIONS) { options.getOrNull(it)?.obj?.id ?: -1 }
+    val joined = (listOf(title) + options.map(SkillMultiOption::label)).joinToString("|")
+    skillMultiSetup(this, verb.id, maxCount, selectedCount, objs, joined)
+    for (component in optionComponents) {
+        ifSetEvents(component, SkillMulti.SUB_RANGE, IfEvent.PauseButton)
+    }
+}
+
 internal fun Player.ifChoice(
     title: String,
     joinedChoices: String,

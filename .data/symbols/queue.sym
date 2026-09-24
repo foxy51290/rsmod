@@ -24,3 +24,5 @@
 23	runmode_toggle
 24	preserve_activation
 25	client_mode
+26	login_magic_spellbook_reveal
+27	smithing_make

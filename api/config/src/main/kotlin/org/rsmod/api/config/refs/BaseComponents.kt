@@ -7,6 +7,7 @@ import org.rsmod.api.type.refs.comp.ComponentReferences
 typealias components = BaseComponents
 
 object BaseComponents : ComponentReferences() {
+    val chatbox_chatarea = find("chatbox:chatarea")
     val mainmodal = find("toplevel_osrs_stretch:mainmodal", 5905850806851984360)
     val sidemodal = find("toplevel_osrs_stretch:sidemodal", 8719636644635355055)
 
@@ -34,6 +35,12 @@ object BaseComponents : ComponentReferences() {
     val toplevel_target_side12 = find("toplevel_osrs_stretch:side12", 3182435415241880457)
     val toplevel_target_side13 = find("toplevel_osrs_stretch:side13", 3182435415241880458)
     val toplevel_target_orbs = find("toplevel_osrs_stretch:orbs", 7781034257266136367)
+
+    val orbs_worldmap = find("orbs:worldmap", null)
+    val worldmap_close = find("worldmap:close", null)
+    val magic_spellbook_teleport_home_standard =
+        find("magic_spellbook:teleport_home_standard", null)
+
     val toplevel_target_chat_container =
         find("toplevel_osrs_stretch:chat_container", 7378521493207664357)
     val toplevel_target_pvp_icons = find("toplevel_osrs_stretch:pvp_icons", 4026873813368753076)

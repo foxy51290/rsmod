@@ -14,6 +14,7 @@ import org.rsmod.api.random.GameRandom
 import org.rsmod.events.EventBus
 import org.rsmod.game.entity.NpcList
 import org.rsmod.game.entity.PlayerList
+import org.rsmod.game.type.comp.ComponentTypeList
 import org.rsmod.game.type.inv.InvTypeList
 import org.rsmod.game.type.loc.LocTypeList
 import org.rsmod.game.type.npc.NpcTypeList
@@ -79,6 +80,7 @@ public data class ProtectedAccessContext(
     private val getCollision: () -> CollisionFlagMap,
     private val getAreaChecker: () -> AreaChecker,
     private val getAlignment: () -> TextAlignment,
+    private val getComponentTypes: () -> ComponentTypeList,
     private val getInvTypes: () -> InvTypeList,
     private val getLocTypes: () -> LocTypeList,
     private val getNpcTypes: () -> NpcTypeList,
@@ -100,6 +102,7 @@ public data class ProtectedAccessContext(
     public val collision: CollisionFlagMap by lazyLoad { getCollision() }
     public val areaChecker: AreaChecker by lazyLoad { getAreaChecker() }
     public val alignment: TextAlignment by lazyLoad { getAlignment() }
+    public val componentTypes: ComponentTypeList by lazyLoad { getComponentTypes() }
     public val invTypes: InvTypeList by lazyLoad { getInvTypes() }
     public val locTypes: LocTypeList by lazyLoad { getLocTypes() }
     public val npcTypes: NpcTypeList by lazyLoad { getNpcTypes() }

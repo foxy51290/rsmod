@@ -7,6 +7,7 @@ import org.rsmod.api.type.refs.interf.InterfaceReferences
 typealias interfaces = BaseInterfaces
 
 object BaseInterfaces : InterfaceReferences() {
+    val skillmulti = find("skillmulti")
     val fade_overlay = find("fade_overlay", 9223372035931967580)
 
     val bank_main = find("bankmain", 479914382)
@@ -16,6 +17,7 @@ object BaseInterfaces : InterfaceReferences() {
     val toplevel = find("toplevel", 9223372034726091525)
     val toplevel_osrs_stretch = find("toplevel_osrs_stretch", 9223372035990794041)
     val toplevel_pre_eoc = find("toplevel_pre_eoc", 9223372034871006052)
+    val worldmap = find("worldmap", null)
 
     val buff_bar = find("buff_bar", 9223372034871751765)
     val stat_boosts_hud = find("stat_boosts_hud", 1593617132)
