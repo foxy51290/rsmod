@@ -1,9 +1,11 @@
 package org.rsmod.content.skills.prayer.scripts
 
 import jakarta.inject.Inject
+import org.rsmod.api.config.refs.locs
 import org.rsmod.api.config.refs.objs
 import org.rsmod.api.config.refs.stats
 import org.rsmod.api.script.onOpHeld1
+import org.rsmod.api.script.onOpLocU
 import org.rsmod.game.type.obj.ObjType
 import org.rsmod.game.type.seq.SeqTypeList
 import org.rsmod.plugin.scripts.PluginScript
@@ -72,6 +74,32 @@ public class PrayerBones @Inject constructor(private val seqTypes: SeqTypeList) 
             statAdvance(stats.prayer, xp)
             mes("You bury the bones.")
         }
+
+        registerAltar(locs.altar, obj, xp)
+        registerAltar(locs.chaosaltar, obj, xp)
+    }
+
+    private fun ScriptContext.registerAltar(
+        altar: org.rsmod.game.type.loc.LocType,
+        obj: ObjType,
+        xp: Double,
+    ) {
+        onOpLocU(altar, obj) {
+            val slot = it.invSlot
+
+            if (inv[slot] == null) {
+                return@onOpLocU
+            }
+
+            val offerAnim = seqTypes[827]
+            if (offerAnim != null) {
+                anim(offerAnim)
+            }
+
+            inv[slot] = null
+            statAdvance(stats.prayer, xp * ALTAR_XP_MULTIPLIER)
+            mes("The gods are very pleased with your offering.")
+        }
     }
 
     private fun ScriptContext.registerAshes(obj: ObjType, xp: Double) {
@@ -80,5 +108,9 @@ public class PrayerBones @Inject constructor(private val seqTypes: SeqTypeList) 
             statAdvance(stats.prayer, xp)
             mes("You scatter the ashes.")
         }
+    }
+
+    private companion object {
+        const val ALTAR_XP_MULTIPLIER: Double = 3.5
     }
 }
