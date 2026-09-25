@@ -4,14 +4,28 @@ import jakarta.inject.Inject
 import org.rsmod.api.config.refs.locs
 import org.rsmod.api.config.refs.objs
 import org.rsmod.api.config.refs.stats
+import org.rsmod.api.player.protect.ProtectedAccess
+import org.rsmod.api.random.GameRandom
 import org.rsmod.api.script.onOpHeld1
+import org.rsmod.api.script.onOpLoc1
 import org.rsmod.api.script.onOpLocU
+import org.rsmod.api.script.onPlayerQueueWithArgs
+import org.rsmod.api.type.refs.queue.QueueReferences
+import org.rsmod.game.type.loc.LocType
 import org.rsmod.game.type.obj.ObjType
 import org.rsmod.game.type.seq.SeqTypeList
 import org.rsmod.plugin.scripts.PluginScript
 import org.rsmod.plugin.scripts.ScriptContext
 
-public class PrayerBones @Inject constructor(private val seqTypes: SeqTypeList) : PluginScript() {
+object PrayerQueues : QueueReferences() {
+    val offer = find("prayer_altar_offer")
+}
+
+private data class AltarOfferJob(val obj: ObjType, val xp: Double)
+
+public class PrayerBones
+@Inject
+constructor(private val seqTypes: SeqTypeList, private val random: GameRandom) : PluginScript() {
 
     override fun ScriptContext.startup() {
         // Bones
@@ -61,6 +75,21 @@ public class PrayerBones @Inject constructor(private val seqTypes: SeqTypeList) 
         registerAshes(objs.malicious_ashes, 65.0)
         registerAshes(objs.abyssal_ashes, 85.0)
         registerAshes(objs.infernal_ashes, 110.0)
+
+        // Prayer altars
+        registerPrayerAltar(locs.altar)
+        registerPrayerAltar(locs.chaosaltar)
+
+        onPlayerQueueWithArgs<AltarOfferJob>(PrayerQueues.offer) {
+            continueAltarOffering(this, it.args)
+        }
+    }
+
+    private fun ScriptContext.registerPrayerAltar(altar: LocType) {
+        onOpLoc1(altar) {
+            statRestore(stats.prayer)
+            mes("You recharge your Prayer points.")
+        }
     }
 
     private fun ScriptContext.registerBones(obj: ObjType, xp: Double) {
@@ -79,26 +108,40 @@ public class PrayerBones @Inject constructor(private val seqTypes: SeqTypeList) 
         registerAltar(locs.chaosaltar, obj, xp)
     }
 
-    private fun ScriptContext.registerAltar(
-        altar: org.rsmod.game.type.loc.LocType,
-        obj: ObjType,
-        xp: Double,
-    ) {
+    private fun ScriptContext.registerAltar(altar: LocType, obj: ObjType, xp: Double) {
         onOpLocU(altar, obj) {
-            val slot = it.invSlot
-
-            if (inv[slot] == null) {
+            if (invTotal(inv, obj) <= 0) {
                 return@onOpLocU
             }
 
-            val offerAnim = seqTypes[827]
-            if (offerAnim != null) {
-                anim(offerAnim)
-            }
+            weakQueue(PrayerQueues.offer, ALTAR_OFFER_CYCLES, AltarOfferJob(obj, xp))
+        }
+    }
 
-            inv[slot] = null
-            statAdvance(stats.prayer, xp * ALTAR_XP_MULTIPLIER)
-            mes("The gods are very pleased with your offering.")
+    private suspend fun continueAltarOffering(access: ProtectedAccess, job: AltarOfferJob) {
+        if (access.invTotal(access.inv, job.obj) <= 0) {
+            return
+        }
+
+        val offerAnim = seqTypes[827]
+        if (offerAnim != null) {
+            access.anim(offerAnim)
+        }
+
+        access.statAdvance(stats.prayer, job.xp * ALTAR_XP_MULTIPLIER)
+
+        if (!random.randomBoolean()) {
+            val slot = access.inv.indexOfFirst { stack -> stack != null && stack.id == job.obj.id }
+
+            if (slot != -1) {
+                access.inv[slot] = null
+            }
+        }
+
+        access.mes("The gods are very pleased with your offering.")
+
+        if (access.invTotal(access.inv, job.obj) > 0) {
+            access.weakQueue(PrayerQueues.offer, ALTAR_OFFER_CYCLES, job)
         }
     }
 
@@ -112,5 +155,6 @@ public class PrayerBones @Inject constructor(private val seqTypes: SeqTypeList) 
 
     private companion object {
         const val ALTAR_XP_MULTIPLIER: Double = 5.0
+        const val ALTAR_OFFER_CYCLES: Int = 3
     }
 }

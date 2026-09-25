@@ -99,7 +99,15 @@ tasks.register<JavaExec>("setupLogbackAdvanced") {
     doLast { logger.lifecycle("Logback advanced configuration copied successfully.") }
 }
 
+tasks.register<JavaExec>("printAltarLocs") {
+    group = "diagnostics"
+    description = "Prints altar location definitions from the game cache."
+
+    mainClass.set("org.rsmod.server.install.PrintAltarLocsKt")
+    classpath = sourceSets["main"].runtimeClasspath
+}
 fun getArgsFromProperty(propertyName: String): List<String> {
     val argsProp = project.findProperty(propertyName)
     return argsProp?.toString()?.split(" ") ?: emptyList()
 }
+
