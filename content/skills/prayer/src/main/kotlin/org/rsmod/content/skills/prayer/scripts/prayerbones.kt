@@ -111,6 +111,6 @@ public class PrayerBones @Inject constructor(private val seqTypes: SeqTypeList) 
     }
 
     private companion object {
-        const val ALTAR_XP_MULTIPLIER: Double = 3.5
+        const val ALTAR_XP_MULTIPLIER: Double = 5.0
     }
 }
